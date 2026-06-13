@@ -915,27 +915,28 @@ select:focus {
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     display: none;
-    justify-content: center;
-    align-items: center;
+    overflow-y: auto;
     z-index: 100;
     opacity: 0;
     transition: var(--transition-fast);
 }
 
 .modal.active {
-    display: flex;
+    display: block;
     opacity: 1;
 }
 
 .modal-content {
     width: 90%;
     max-width: 500px;
+    margin: 2rem auto;
     animation: zoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .modal-content.max-w-sm {
-    max-w-width: 380px;
+    max-width: 380px;
     width: 380px;
+    margin: 2rem auto;
 }
 
 .modal-header {
@@ -1891,6 +1892,9 @@ select:focus {
                 <button class="nav-btn active" id="nav-btn-admin">
                     <i class="fa-solid fa-user-gear"></i> Dashboard Admin
                 </button>
+                <button class="nav-btn" id="nav-btn-partners">
+                    <i class="fa-solid fa-handshake"></i> Kemitraan & Proposal
+                </button>
                 <button class="nav-btn" id="nav-btn-buyer">
                     <i class="fa-solid fa-cart-shopping"></i> Marketplace Pembeli
                 </button>
@@ -1992,16 +1996,7 @@ select:focus {
             </section>
 
             <!-- ================= ADMIN / SELLER DASHBOARD ================= -->
-            <section id="view-admin" class="view-section active">
-                <!-- Admin Sub-Navigation Tabs -->
-                <div class="admin-tabs">
-                    <button class="admin-tab active" id="admin-tab-sales">
-                        <i class="fa-solid fa-store"></i> Gudang & Penjualan
-                    </button>
-                    <button class="admin-tab" id="admin-tab-partners">
-                        <i class="fa-solid fa-handshake"></i> Kemitraan & Proposal
-                    </button>
-                </div>
+            <section id="view-admin" class="view-section">
 
                 <!-- Sales & IoT Management Wrapper -->
                 <div id="admin-sales-content">
@@ -2276,9 +2271,10 @@ select:focus {
                         </div>
                     </div>
                 </div> <!-- End admin-sales-content -->
+            </section> <!-- End view-admin -->
 
-                <!-- Partnership & Proposal Program Wrapper (Hidden initially) -->
-                <div id="admin-partners-content" class="hidden">
+            <!-- ================= PARTNERSHIP & PROPOSAL DASHBOARD ================= -->
+            <section id="view-partners" class="view-section">
                     <div class="grid-layout">
                         <!-- Row 1: Partnership Header Metrics Cards (spans both) -->
                         <div class="card" style="grid-column: span 2; padding: 1.25rem;">
@@ -2506,8 +2502,7 @@ select:focus {
                             </div>
                         </div>
                     </div>
-                </div> <!-- End admin-partners-content -->
-            </section>
+            </section> <!-- End view-partners -->
 
             <!-- ================= BUYER / VISITOR DASHBOARD ================= -->
             <section id="view-buyer" class="view-section">
@@ -2782,25 +2777,25 @@ select:focus {
                     <i class="fa-brands fa-whatsapp" style="color: #25d366;"></i>
                     <div>
                         <span>WhatsApp Support</span>
-                        <strong>+62 878-6543-2109</strong>
+                        <strong>+62 823-4254-9633</strong>
                     </div>
                 </div>
                 <div class="footer-contact-item">
                     <i class="fa-solid fa-envelope" style="color: var(--secondary);"></i>
                     <div>
                         <span>Email Support</span>
-                        <strong>mitra@bawanghub.com</strong>
+                        <strong>bawanghub19@gmail.com</strong>
                     </div>
                 </div>
                 <div class="footer-contact-item">
                     <i class="fa-solid fa-map-location-dot" style="color: var(--primary);"></i>
                     <div>
                         <span>Kantor Cabang</span>
-                        <strong>Gerung, Lombok Barat, NTB</strong>
+                        <strong>Lembar, Lombok Barat, NTB</strong>
                     </div>
                 </div>
             </div>
-            <p class="copyright-text">&copy; 2026 BawangHub Team - Project Kewirausahaan Teknik Informatika. All rights reserved.</p>
+            <p class="copyright-text">&copy; 2026 BawangHub Team. All rights reserved.</p>
         </footer>
     </div>
 
@@ -3072,10 +3067,25 @@ select:focus {
       <script>
 // ================= BAWANGHUB PERSISTENT DATABASE & BUSINESS LOGIC =================
 
+window.addEventListener("error", (e) => {
+    if (e.message && (e.message.toLowerCase().includes("prospects") || e.message.toLowerCase().includes("localstorage") || e.message.toLowerCase().includes("null") || e.message.toLowerCase().includes("undefined") || e.message.toLowerCase().includes("starts-with") || e.message.toLowerCase().includes("startswith"))) {
+        console.warn("Detected state corruption. Auto-healing localStorage...");
+        localStorage.clear();
+        window.location.reload();
+    }
+});
+
 // LocalStorage helpers
 function getStorageItem(key, defaultValue) {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultValue;
+    try {
+        const item = localStorage.getItem(key);
+        if (!item || item === "null" || item === "undefined") return defaultValue;
+        const parsed = JSON.parse(item);
+        return parsed === null || parsed === undefined ? defaultValue : parsed;
+    } catch (e) {
+        console.error("Failed to parse localStorage key:", key, e);
+        return defaultValue;
+    }
 }
 
 function setStorageItem(key, value) {
@@ -3197,9 +3207,15 @@ const DEFAULT_PROSPECTS = [
 
 let prospects = getStorageItem("bawanghub_prospects", DEFAULT_PROSPECTS);
 
+// Enforce types and array presence
+if (!Array.isArray(listings)) listings = DEFAULT_LISTINGS;
+if (!Array.isArray(transactions)) transactions = DEFAULT_TRANSACTIONS;
+if (!Array.isArray(prospects)) prospects = DEFAULT_PROSPECTS;
+
 // Location Migration & Schema Upgrade: Reset if Brebes is found or prospects lack new fields
-const needsProspectUpgrade = prospects.some(p => !p.status || !p.farmGroup || !p.location);
-const needsLocationReset = listings.some(l => l.location && l.location.includes("Brebes")) || prospects.some(p => p.location && p.location.includes("Brebes"));
+const needsProspectUpgrade = prospects.some(p => !p || !p.status || !p.farmGroup || !p.location);
+const needsLocationReset = listings.some(l => l && l.location && l.location.includes("Brebes")) || 
+                           prospects.some(p => p && p.location && p.location.includes("Brebes"));
 
 if (needsProspectUpgrade || needsLocationReset) {
     localStorage.removeItem("bawanghub_listings");
@@ -3233,6 +3249,64 @@ function saveDB() {
     setStorageItem("bawanghub_txs", transactions);
 }
 
+function initGlobalModalObserver() {
+    const modals = document.querySelectorAll(".modal");
+    
+    // Setup click outside to close
+    modals.forEach(modal => {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                modal.classList.remove("active");
+                if (modal.id === "checkout-modal") {
+                    currentCartItem = null;
+                }
+            }
+        });
+    });
+    
+    // Setup Escape key to close
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            const activeModal = document.querySelector(".modal.active");
+            if (activeModal) {
+                activeModal.classList.remove("active");
+                if (activeModal.id === "checkout-modal") {
+                    currentCartItem = null;
+                }
+            }
+        }
+    });
+
+    // Close buttons binding helper
+    const btnCloseQR = document.getElementById("btn-close-qr");
+    if (btnCloseQR) {
+        btnCloseQR.addEventListener("click", () => {
+            document.getElementById("qr-modal").classList.remove("active");
+        });
+    }
+    const btnCloseCheckout = document.getElementById("btn-close-checkout");
+    if (btnCloseCheckout) {
+        btnCloseCheckout.addEventListener("click", () => {
+            document.getElementById("checkout-modal").classList.remove("active");
+            currentCartItem = null;
+        });
+    }
+
+    // Observer to lock/unlock body scroll
+    const observer = new MutationObserver(() => {
+        const anyActive = document.querySelector(".modal.active");
+        if (anyActive) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+    });
+
+    modals.forEach(modal => {
+        observer.observe(modal, { attributes: true, attributeFilter: ["class"] });
+    });
+}
+
 // ================= INITIALIZATION =================
 document.addEventListener("DOMContentLoaded", () => {
     initNavigationModule();
@@ -3244,6 +3318,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initSupportChatModule();
     initPartnershipCalculator();
     initCertificateModal();
+    initGlobalModalObserver();
     
     // Render partnership data
     renderActiveAgreementsTable();
@@ -3434,7 +3509,20 @@ function updateAppView() {
         currentUser = { role: "admin", name: "Pak Slamet (Admin/Pengelola)", farmName: "Kelompok Tani Tunas Mulya" };
     }
     
-    if (currentUser.role === "admin") {
+    const navBtnPartners = document.getElementById("nav-btn-partners");
+    const isPartnersActive = navBtnPartners && navBtnPartners.classList.contains("active");
+
+    if (isPartnersActive) {
+        const viewPartners = document.getElementById("view-partners");
+        if (viewPartners) viewPartners.classList.add("active");
+        if (headerTitle) {
+            headerTitle.innerHTML = `<i class="fa-solid fa-handshake"></i> Kemitraan & Proposal (Lombok Barat Hub)`;
+        }
+        renderFarmerProspectsTable();
+        populateFarmerProspectSelect();
+        renderActiveAgreementsTable();
+        updatePartnershipStats();
+    } else if (currentUser.role === "admin") {
         document.getElementById("view-admin").classList.add("active");
         if (headerTitle) {
             headerTitle.innerHTML = `<i class="fa-solid fa-user-gear"></i> Admin/Petani (Lombok Barat Hub)`;
@@ -3673,7 +3761,7 @@ function renderAdminListingsTable() {
 
 function deleteAdminListing(id) {
     if (confirm("Apakah Anda yakin ingin menghapus postingan stok ini?")) {
-        listings = listings.filter(item => item.id !== id);
+        listings = listings.filter(item => item && item.id !== id);
         saveDB();
         renderAdminListingsTable();
     }
@@ -3794,9 +3882,15 @@ function initAdminModule() {
             document.getElementById("prop-doc-split-farmer").innerText = splitFarmer;
             document.getElementById("prop-doc-split-platform").innerText = splitPlatform;
             
+            const watermark = document.getElementById("mou-watermark-stamp");
+            if (watermark) watermark.classList.add("hidden");
+
             const agreeBtn = document.getElementById("btn-agree-partnership");
-            agreeBtn.setAttribute("data-prospect-id", prospectId);
-            agreeBtn.setAttribute("data-split", selectedSplit);
+            if (agreeBtn) {
+                agreeBtn.style.display = ""; // Reset hidden display style
+                agreeBtn.setAttribute("data-prospect-id", prospectId);
+                agreeBtn.setAttribute("data-split", selectedSplit);
+            }
 
             document.getElementById("proposal-modal").classList.add("active");
         });
@@ -3867,14 +3961,16 @@ function renderFarmerProspectsTable() {
     tableBody.innerHTML = "";
 
     prospects.forEach(p => {
+        if (!p) return;
+        const pStatus = p.status || "";
         let statusBadge = `<span class="badge status-badge warning"><i class="fa-solid fa-clock"></i> Belum Bermitra</span>`;
-        if (p.status === "Proposal Dikirim") {
+        if (pStatus === "Proposal Dikirim") {
             statusBadge = `<span class="badge status-badge warning" style="background:rgba(255, 170, 0, 0.15); color:#ffaa00; border-color:rgba(255,170,0,0.25);"><i class="fa-solid fa-paper-plane"></i> Proposal Dikirim</span>`;
-        } else if (p.status.startsWith("Aktif")) {
-            statusBadge = `<span class="badge status-badge"><i class="fa-solid fa-check-circle"></i> ${p.status}</span>`;
+        } else if (pStatus.startsWith("Aktif")) {
+            statusBadge = `<span class="badge status-badge"><i class="fa-solid fa-check-circle"></i> ${pStatus}</span>`;
         }
 
-        const actionBtn = p.status.startsWith("Aktif") 
+        const actionBtn = pStatus.startsWith("Aktif") 
             ? `<button class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" disabled><i class="fa-solid fa-check"></i> Aktif</button>`
             : `<button class="btn btn-primary" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" onclick="selectProspectForProposal('${p.id}')"><i class="fa-solid fa-file-contract"></i> Hubungi</button>`;
 
@@ -3900,7 +3996,7 @@ function populateFarmerProspectSelect() {
     if (!select) return;
     select.innerHTML = '<option value="" disabled selected>-- Pilih Petani --</option>';
 
-    const inactiveProspects = prospects.filter(p => !p.status.startsWith("Aktif"));
+    const inactiveProspects = prospects.filter(p => p && p.status && !p.status.startsWith("Aktif"));
     inactiveProspects.forEach(p => {
         const option = document.createElement("option");
         option.value = p.id;
@@ -3945,7 +4041,7 @@ function renderAdminOrdersTable() {
     
     // Admin receives orders addressed to their farmer name
     const adminPrefix = currentUser.name.split(" ")[0];
-    const myOrders = transactions.filter(t => t.farmer.includes(adminPrefix));
+    const myOrders = transactions.filter(t => t && t.farmer && t.farmer.includes(adminPrefix));
     
     if (myOrders.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:var(--text-muted)">Belum ada pesanan yang masuk untuk lahan Anda.</td></tr>`;
@@ -4042,7 +4138,7 @@ function initBuyerModule() {
             };
             
             transactions.unshift(newTx);
-            listings = listings.filter(item => item.id !== currentCartItem.id);
+            listings = listings.filter(item => item && item.id !== currentCartItem.id);
             saveDB();
             
             selectedTrackingTxId = newTx.id;
@@ -4084,7 +4180,7 @@ function renderMarketplace() {
     const sortVal = document.getElementById("filter-sort").value;
     container.innerHTML = "";
     
-    let filteredListings = listings.filter(item => item.location.toLowerCase().includes(searchVal));
+    let filteredListings = listings.filter(item => item && item.location && item.location.toLowerCase().includes(searchVal));
     
     if (sortVal === "cheapest") {
         filteredListings.sort((a, b) => a.price - b.price);
@@ -4186,6 +4282,43 @@ function renderBuyerTransactionsTable() {
         tableBody.appendChild(row);
     });
 }
+
+window.openCheckoutModal = (listingId) => {
+    const item = listings.find(l => l.id === listingId);
+    if (!item) return;
+    
+    currentCartItem = item;
+    const farmerEl = document.getElementById("checkout-farmer");
+    const qtyEl = document.getElementById("checkout-qty");
+    const priceEl = document.getElementById("checkout-price");
+    const totalEl = document.getElementById("checkout-total");
+    
+    if (farmerEl) farmerEl.innerText = item.farmer;
+    if (qtyEl) qtyEl.innerText = item.qty;
+    if (priceEl) priceEl.innerText = item.price.toLocaleString("id-ID");
+    if (totalEl) totalEl.innerText = `Rp ${(item.qty * item.price).toLocaleString("id-ID")}`;
+    
+    const checkoutModal = document.getElementById("checkout-modal");
+    if (checkoutModal) checkoutModal.classList.add("active");
+};
+
+window.viewQRCode = (txId) => {
+    const tx = transactions.find(t => t.id === txId);
+    if (!tx) return;
+    
+    const qrTxIdEl = document.getElementById("qr-tx-id");
+    const qrFarmerEl = document.getElementById("qr-farmer-name");
+    const qrImg = document.getElementById("qr-image");
+    
+    if (qrTxIdEl) qrTxIdEl.innerText = tx.id;
+    if (qrFarmerEl) qrFarmerEl.innerText = tx.farmer.split(" - ")[0];
+    if (qrImg) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${tx.id}`;
+    }
+    
+    const qrModal = document.getElementById("qr-modal");
+    if (qrModal) qrModal.classList.add("active");
+};
 
 window.trackOrder = (txId) => {
     selectedTrackingTxId = txId;
@@ -4549,13 +4682,16 @@ function renderBuyerCharts() {
 
 function initNavigationModule() {
     const navAdmin = document.getElementById("nav-btn-admin");
+    const navPartners = document.getElementById("nav-btn-partners");
     const navBuyer = document.getElementById("nav-btn-buyer");
     const navTrace = document.getElementById("nav-btn-trace");
 
-    const navBtns = [navAdmin, navBuyer, navTrace];
+    const navBtns = [navAdmin, navPartners, navBuyer, navTrace];
 
     const switchDashboardView = (targetRole) => {
         if (targetRole === "admin") {
+            currentUser = { role: "admin", name: "Pak Slamet (Admin/Pengelola)", farmName: "Kelompok Tani Tunas Mulya" };
+        } else if (targetRole === "partners") {
             currentUser = { role: "admin", name: "Pak Slamet (Admin/Pengelola)", farmName: "Kelompok Tani Tunas Mulya" };
         } else if (targetRole === "buyer") {
             currentUser = { role: "buyer", name: "Haji Wildan (Buyer)", bizName: "Dapur Bawang Goreng Kriuk Barokah" };
@@ -4566,7 +4702,9 @@ function initNavigationModule() {
         navBtns.forEach(btn => {
             if (btn) btn.classList.remove("active");
         });
+        
         if (targetRole === "admin" && navAdmin) navAdmin.classList.add("active");
+        if (targetRole === "partners" && navPartners) navPartners.classList.add("active");
         if (targetRole === "buyer" && navBuyer) navBuyer.classList.add("active");
         if (targetRole === "guest" && navTrace) navTrace.classList.add("active");
 
@@ -4574,6 +4712,7 @@ function initNavigationModule() {
     };
 
     if (navAdmin) navAdmin.addEventListener("click", () => switchDashboardView("admin"));
+    if (navPartners) navPartners.addEventListener("click", () => switchDashboardView("partners"));
     if (navBuyer) navBuyer.addEventListener("click", () => switchDashboardView("buyer"));
     if (navTrace) navTrace.addEventListener("click", () => switchDashboardView("guest"));
 
@@ -4768,7 +4907,7 @@ function renderActiveAgreementsTable() {
     if (!tableBody) return;
     tableBody.innerHTML = "";
 
-    const activeProspects = prospects.filter(p => p.status.startsWith("Aktif"));
+    const activeProspects = prospects.filter(p => p && p.status && p.status.startsWith("Aktif"));
 
     if (activeProspects.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted)">Belum ada kemitraan aktif. Silakan kirim proposal di atas.</td></tr>`;
@@ -4776,18 +4915,19 @@ function renderActiveAgreementsTable() {
     }
 
     activeProspects.forEach((p, idx) => {
+        if (!p) return;
         const agreementId = `MOU-LOBAR-${100 + idx + 1}`;
-        const splitText = p.status.includes("7/3") ? "70% / 30%" : "60% / 40%";
+        const splitText = (p.status && p.status.includes("7/3")) ? "70% / 30%" : "60% / 40%";
         const row = document.createElement("tr");
         
         row.innerHTML = `
             <td><strong>${agreementId}</strong></td>
             <td>
-                <strong>${p.name}</strong><br>
-                <span style="font-size: 0.75rem; color:var(--text-muted)">${p.farmGroup}</span>
+                <strong>${p.name || ''}</strong><br>
+                <span style="font-size: 0.75rem; color:var(--text-muted)">${p.farmGroup || ''}</span>
             </td>
             <td><span class="badge status-badge" style="background:rgba(59, 130, 246, 0.15); color:#60a5fa; border-color:rgba(59,130,246,0.25);">${splitText}</span></td>
-            <td>${p.location}</td>
+            <td>${p.location || ''}</td>
             <td>01/06/2026</td>
             <td><span class="badge status-badge"><i class="fa-solid fa-circle"></i> Terverifikasi</span></td>
             <td>
@@ -4827,7 +4967,7 @@ window.viewActiveAgreementMOU = (prospectId, agreementId, splitText) => {
 };
 
 function updatePartnershipStats() {
-    const activeProspects = prospects.filter(p => p.status.startsWith("Aktif"));
+    const activeProspects = prospects.filter(p => p && p.status && p.status.startsWith("Aktif"));
     const countEl = document.getElementById("partner-metric-count");
     const landEl = document.getElementById("partner-metric-land");
     const savedEl = document.getElementById("partner-metric-saved");
@@ -4837,6 +4977,7 @@ function updatePartnershipStats() {
 
     let totalLand = 0;
     activeProspects.forEach((p) => {
+        if (!p || !p.name) return;
         if (p.name.includes("Slamet")) totalLand += 5.2;
         else if (p.name.includes("Joko")) totalLand += 6.8;
         else if (p.name.includes("Sumarni")) totalLand += 4.5;
@@ -4847,13 +4988,17 @@ function updatePartnershipStats() {
     if (landEl) landEl.innerText = `${totalLand.toFixed(1)} Hektar`;
 
     let totalSaved = 0;
-    transactions.forEach(t => totalSaved += t.qty);
-    listings.forEach(l => totalSaved += l.qty);
+    transactions.forEach(t => {
+        if (t && t.qty) totalSaved += t.qty;
+    });
+    listings.forEach(l => {
+        if (l && l.qty) totalSaved += l.qty;
+    });
     if (savedEl) savedEl.innerText = `${totalSaved.toLocaleString("id-ID")} kg`;
 
     let totalRevenue = 0;
     transactions.forEach(t => {
-        totalRevenue += t.total * 0.7;
+        if (t && t.total) totalRevenue += t.total * 0.7;
     });
     if (revEl) {
         if (totalRevenue >= 1000000) {
