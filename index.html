@@ -138,7 +138,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
+    padding: 4px;
+    box-sizing: border-box;
     color: white;
     box-shadow: var(--glow-primary);
     animation: pulse 3s infinite alternate;
@@ -1879,7 +1880,22 @@ select:focus {
         <header class="app-header">
             <div class="logo-area">
                 <div class="logo-icon">
-                    <i class="fa-solid fa-seedling"></i>
+                    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; display: block;">
+                        <!-- Outer Bulb Outline -->
+                        <path d="M 42,15 L 50,19 L 58,15 C 58,15 57,30 56,33 C 55,44 80,48 80,62 C 80,75 68,82 50,82 C 32,82 20,75 20,62 C 20,48 45,44 44,33 C 43,30 42,15 42,15 Z" />
+                        <!-- Root Cap -->
+                        <path d="M 45,82 C 45,87 55,87 55,82" />
+                        <!-- Left Flank -->
+                        <path d="M 44,35 C 34,45 28,54 28,62 C 28,71 36,77 43,79" />
+                        <!-- Right Flank -->
+                        <path d="M 56,35 C 66,45 72,54 72,62 C 72,71 64,77 57,79" />
+                        <!-- Inner Loop -->
+                        <path d="M 50,38 C 47,44 40,51 40,61 C 40,68 44,73 50,73 C 56,73 60,68 60,61 C 60,51 53,38 50,38 Z" fill="rgba(255,255,255,0.15)" />
+                        <!-- Center Core Line -->
+                        <path d="M 50,54 V 65" />
+                        <!-- Center Core Dot -->
+                        <circle cx="50" cy="48" r="2.7" fill="currentColor" stroke="none" />
+                    </svg>
                 </div>
                 <div class="logo-text">
                     <h1>Bawang<span>Hub</span></h1>
@@ -1916,7 +1932,22 @@ select:focus {
             <section id="view-login" class="view-section">
                 <div class="login-view-container">
                     <div class="card login-card">
-                        <i class="fa-solid fa-seedling login-icon-large"></i>
+                        <svg viewBox="0 0 100 100" width="80" height="80" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" class="login-icon-large" style="display: block; margin: 0 auto 1.5rem auto;">
+                            <!-- Outer Bulb Outline -->
+                            <path d="M 42,15 L 50,19 L 58,15 C 58,15 57,30 56,33 C 55,44 80,48 80,62 C 80,75 68,82 50,82 C 32,82 20,75 20,62 C 20,48 45,44 44,33 C 43,30 42,15 42,15 Z" />
+                            <!-- Root Cap -->
+                            <path d="M 45,82 C 45,87 55,87 55,82" />
+                            <!-- Left Flank -->
+                            <path d="M 44,35 C 34,45 28,54 28,62 C 28,71 36,77 43,79" />
+                            <!-- Right Flank -->
+                            <path d="M 56,35 C 66,45 72,54 72,62 C 72,71 64,77 57,79" />
+                            <!-- Inner Loop -->
+                            <path d="M 50,38 C 47,44 40,51 40,61 C 40,68 44,73 50,73 C 56,73 60,68 60,61 C 60,51 53,38 50,38 Z" fill="rgba(255, 94, 54, 0.15)" />
+                            <!-- Center Core Line -->
+                            <path d="M 50,54 V 65" />
+                            <!-- Center Core Dot -->
+                            <circle cx="50" cy="48" r="2.7" fill="currentColor" stroke="none" />
+                        </svg>
                         <h2 class="login-title">Selamat Datang</h2>
                         <p class="login-subtitle" style="margin-bottom: 1.5rem;">Platform B2B Agrotech & IoT Bawang Merah Off-Grade</p>
                         
